@@ -1,0 +1,165 @@
+{
+  "name": "AiGovOps Capture/Scribe Agent",
+  "description": "Processes Zoom campfire recordings into Decision Cards + YAML checklist snippets. Import this workflow into n8n (Railway).",
+  "version": "0.1.0",
+  "framework": "AiGovOps Foundation OS",
+  "autonomy_level": "draft-only",
+  "nodes": [
+    {
+      "id": "webhook-trigger",
+      "type": "n8n-nodes-base.webhook",
+      "position": [250, 300],
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "campfire-intake",
+        "responseMode": "onReceived",
+        "responseData": "allEntries"
+      },
+      "notes": "Receives Zoom recording webhook or manual upload. Payload: {recording_url, meeting_id, participants[], timestamp}"
+    },
+    {
+      "id": "transcribe",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [500, 300],
+      "parameters": {
+        "method": "POST",
+        "url": "={{$env.TRANSCRIPTION_API_URL}}",
+        "sendBody": true,
+        "bodyParameters": {
+          "audio_url": "={{$json.recording_url}}",
+          "language": "en",
+          "speaker_labels": true
+        }
+      },
+      "notes": "Transcribes recording with speaker diarization. Uses Deepgram, AssemblyAI, or Whisper API."
+    },
+    {
+      "id": "ai-extract-decisions",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [750, 200],
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.perplexity.ai/chat/completions",
+        "sendHeaders": true,
+        "headerParameters": {
+          "Authorization": "Bearer ={{$env.PERPLEXITY_API_KEY}}"
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "model": "sonar-pro",
+          "messages": [
+            {
+              "role": "system",
+              "content": "You are the AiGovOps Capture/Scribe agent. Extract governance decisions from meeting transcripts. For each decision found, output a JSON object matching the Decision Card schema: {id, title, status:'draft', decision_type, description, rationale, proposer, reviewers:[], created_at, evidence:[]}. Also extract any checklist items as YAML snippets. Output JSON array of decision cards followed by --- then YAML checklist items."
+            },
+            {
+              "role": "user",
+              "content": "={{$json.transcript}}"
+            }
+          ]
+        }
+      },
+      "notes": "Uses Perplexity Pro to extract Decision Cards from transcript. Autonomy: DRAFT only - humans must ratify."
+    },
+    {
+      "id": "parse-output",
+      "type": "n8n-nodes-base.code",
+      "position": [1000, 200],
+      "parameters": {
+        "jsCode": "// Parse AI output into Decision Cards and Checklist items\nconst output = $input.first().json.choices[0].message.content;\nconst parts = output.split('---');\nconst cards = JSON.parse(parts[0]);\nconst checklist_yaml = parts[1] || '';\n\n// Add audit metadata to each card\nconst audit = {\n  agent: 'capture-scribe',\n  model: 'sonar-pro',\n  timestamp: new Date().toISOString(),\n  source_meeting: $('webhook-trigger').first().json.meeting_id,\n  autonomy_level: 'draft-only',\n  human_ratification: 'pending'\n};\n\nreturn cards.map(card => ({\n  json: { ...card, audit_trail: audit, checklist_yaml }\n}));"
+      },
+      "notes": "Parses AI output, attaches full audit trail (who, when, model, artifacts)."
+    },
+    {
+      "id": "create-github-pr",
+      "type": "n8n-nodes-base.github",
+      "position": [1250, 100],
+      "parameters": {
+        "resource": "file",
+        "operation": "create",
+        "owner": "bobrapp",
+        "repository": "aigovops-foundation-os",
+        "filePath": "=decision-cards/DC-{{$json.id}}.json",
+        "fileContent": "={{JSON.stringify($json, null, 2)}}",
+        "commitMessage": "=feat(decision-card): Draft DC-{{$json.id}} - {{$json.title}}",
+        "branch": "=campfire/{{$('webhook-trigger').first().json.meeting_id}}"
+      },
+      "notes": "Creates Decision Card file on a branch, NOT main. PR required for human ratification."
+    },
+    {
+      "id": "create-checklist-snippet",
+      "type": "n8n-nodes-base.github",
+      "position": [1250, 300],
+      "parameters": {
+        "resource": "file",
+        "operation": "create",
+        "owner": "bobrapp",
+        "repository": "aigovops-foundation-os",
+        "filePath": "=checklists/campfire-{{$('webhook-trigger').first().json.meeting_id}}.yaml",
+        "fileContent": "={{$json.checklist_yaml}}",
+        "commitMessage": "=feat(checklist): Add campfire checklist snippet",
+        "branch": "=campfire/{{$('webhook-trigger').first().json.meeting_id}}"
+      },
+      "notes": "Creates YAML checklist snippet on the same branch."
+    },
+    {
+      "id": "open-pr",
+      "type": "n8n-nodes-base.github",
+      "position": [1500, 200],
+      "parameters": {
+        "resource": "pullRequest",
+        "operation": "create",
+        "owner": "bobrapp",
+        "repository": "aigovops-foundation-os",
+        "title": "=Campfire Decision Cards - {{$('webhook-trigger').first().json.meeting_id}}",
+        "body": "=## Campfire Capture\n\nAgent: capture-scribe (draft-only)\nMeeting: {{$('webhook-trigger').first().json.meeting_id}}\nCards drafted: {{$json.length || 1}}\n\n**Human ratification required.** Review each Decision Card before merging.\n\n### Audit Trail\n- Model: sonar-pro\n- Timestamp: {{new Date().toISOString()}}\n- Autonomy: draft-only",
+        "head": "=campfire/{{$('webhook-trigger').first().json.meeting_id}}",
+        "base": "main"
+      },
+      "notes": "Opens PR for human review. Policy Gate CI runs automatically on PR."
+    },
+    {
+      "id": "notify-linear",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [1750, 200],
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.linear.app/graphql",
+        "sendHeaders": true,
+        "headerParameters": {
+          "Authorization": "={{$env.LINEAR_API_KEY}}",
+          "Content-Type": "application/json"
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "query": "mutation { issueCreate(input: { teamId: \"={{$env.LINEAR_TEAM_ID}}\", title: \"Review Campfire Decision Cards\", description: \"PR opened with draft Decision Cards from campfire meeting. Human ratification needed.\", priority: 2, labelIds: [\"={{$env.LINEAR_LABEL_REVIEW}}\"] }) { success issue { id identifier url } } }"
+        }
+      },
+      "notes": "Creates Linear issue to track human review. Links to PR."
+    }
+  ],
+  "connections": {
+    "webhook-trigger": {"main": [[{"node": "transcribe", "type": "main", "index": 0}]]},
+    "transcribe": {"main": [[{"node": "ai-extract-decisions", "type": "main", "index": 0}]]},
+    "ai-extract-decisions": {"main": [[{"node": "parse-output", "type": "main", "index": 0}]]},
+    "parse-output": {"main": [[{"node": "create-github-pr", "type": "main", "index": 0}, {"node": "create-checklist-snippet", "type": "main", "index": 0}]]},
+    "create-github-pr": {"main": [[{"node": "open-pr", "type": "main", "index": 0}]]},
+    "create-checklist-snippet": {"main": [[{"node": "open-pr", "type": "main", "index": 0}]]},
+    "open-pr": {"main": [[{"node": "notify-linear", "type": "main", "index": 0}]]}
+  },
+  "env_variables_required": [
+    "TRANSCRIPTION_API_URL",
+    "PERPLEXITY_API_KEY",
+    "GITHUB_TOKEN",
+    "LINEAR_API_KEY",
+    "LINEAR_TEAM_ID",
+    "LINEAR_LABEL_REVIEW"
+  ],
+  "setup_instructions": {
+    "1_deploy_n8n": "Deploy n8n on Railway using the official template",
+    "2_import_workflow": "Import this JSON file into n8n via Settings > Import Workflow",
+    "3_set_env_vars": "Configure all env_variables_required in n8n credentials",
+    "4_connect_zoom": "Set Zoom webhook to POST to your n8n webhook URL /campfire-intake",
+    "5_test": "Run the dogfood test: scripts/dogfood-campfire-test.sh"
+  }
+}
