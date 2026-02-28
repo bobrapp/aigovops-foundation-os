@@ -1,0 +1,46 @@
+# Human Flourishing Gate Policy v1
+# AiGovOps Foundation - Policy as Code
+# Enforced via n8n workflows in CI/deploy pipelines
+
+id: gate.ai-flourishing.v1
+description: Human Flourishing Gate for consumer-facing AI systems
+scope:
+  - consumer-facing
+  - high-impact
+  - public-sector
+risk_level:
+  - medium
+  - high
+
+checks:
+  - id: dignity
+    type: manual
+    required: true
+    evidence_required: true
+    prompt: "How does this AI system affect human dignity and autonomy? Does it reduce human agency, create dependency, or undermine self-determination?"
+
+  - id: equity
+    type: manual
+    required: true
+    evidence_required: true
+    prompt: "How does this AI system affect fairness and inclusion? Are benefits and harms distributed equitably across populations?"
+
+  - id: delight
+    type: manual
+    required: false
+    evidence_required: false
+    prompt: "How does this AI system enable joy, creativity, or positive human experience? What is the best possible outcome for users?"
+
+automation:
+  preconditions:
+    - workflow: n8n.workflow.verify-risk-assessment
+      description: Verify that risk assessment GDR exists and is accepted
+  postconditions:
+    - workflow: n8n.workflow.log-gate-decision
+      description: Log flourishing gate decision to PostHog and Git
+
+enforcement:
+  deploy_block: true
+  description: n8n blocks deploy if no GDR ID with completed flourishing section is present
+  gdr_required: true
+  approver: steward-council
