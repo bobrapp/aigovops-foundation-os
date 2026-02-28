@@ -1,0 +1,139 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aigovops.foundation/schemas/gdr/v0.1",
+  "title": "Governance Decision Record (GDR)",
+  "description": "ADR-inspired schema for AiGovOps Foundation institutional decisions. Every normative decision must be captured in this format.",
+  "type": "object",
+  "required": ["id", "title", "status", "type", "authors", "created_at", "context", "decision", "consequences"],
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^GDR-[0-9]{4}$",
+      "description": "Unique identifier, e.g. GDR-0001"
+    },
+    "title": {
+      "type": "string",
+      "description": "Human-readable title of the decision"
+    },
+    "status": {
+      "type": "string",
+      "enum": ["proposed", "accepted", "deprecated", "superseded"],
+      "description": "Current status of this decision"
+    },
+    "type": {
+      "type": "string",
+      "enum": ["spec-change", "checklist-change", "disallowed-definition", "flourishing-gate-change", "certification-change", "partner-program", "neutrality-coi", "constitutional-amendment", "operational"],
+      "description": "Category of decision - determines required approvals"
+    },
+    "authors": {
+      "type": "array",
+      "items": { "type": "string" },
+      "minItems": 1,
+      "description": "People who drafted this GDR"
+    },
+    "approvers": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Humans who ratified this decision (required for normative types)"
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date",
+      "description": "ISO 8601 date of creation"
+    },
+    "updated_at": {
+      "type": "string",
+      "format": "date",
+      "description": "ISO 8601 date of last update"
+    },
+    "context": {
+      "type": "string",
+      "description": "What is the issue we are deciding on? What forces are at play?"
+    },
+    "decision": {
+      "type": "string",
+      "description": "What is the change that we are proposing and/or doing?"
+    },
+    "consequences": {
+      "type": "string",
+      "description": "What becomes easier or harder as a result of this decision?"
+    },
+    "flourishing": {
+      "type": "object",
+      "description": "Human Flourishing assessment (required for normative decisions)",
+      "properties": {
+        "dignity": {
+          "type": "string",
+          "description": "How does this decision affect human dignity and autonomy?"
+        },
+        "equity": {
+          "type": "string",
+          "description": "How does this decision affect fairness and inclusion?"
+        },
+        "delight": {
+          "type": "string",
+          "description": "How does this decision enable joy, creativity, or positive experience?"
+        }
+      }
+    },
+    "dissent": {
+      "type": "object",
+      "description": "Record of disagreement or minority viewpoints",
+      "properties": {
+        "voices": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Who dissented (may be pseudonymous)"
+        },
+        "rationale": {
+          "type": "string",
+          "description": "Summary of dissenting position"
+        }
+      }
+    },
+    "regulatory_mapping": {
+      "type": "object",
+      "description": "Traceability to external frameworks",
+      "properties": {
+        "nist_ai_rmf": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "NIST AI RMF subcategories, e.g. GOVERN 1.1"
+        },
+        "iso_42001": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "ISO 42001 clauses, e.g. 6.1.2"
+        },
+        "eu_ai_act": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "EU AI Act articles, e.g. Article 9"
+        }
+      }
+    },
+    "policy_files": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Paths to policy YAML/JSON files in this repo affected by this decision"
+    },
+    "automation_refs": {
+      "type": "object",
+      "description": "Links to automation artifacts",
+      "properties": {
+        "n8n_workflow_ids": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "perplexity_shortcut_ids": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "linear_issue_ids": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      }
+    }
+  }
+}
