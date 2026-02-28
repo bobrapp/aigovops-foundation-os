@@ -1,0 +1,90 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aigovops.foundation/schemas/aidevops-spec/v0.1",
+  "title": "AiDevOps Governance Pipeline Specification",
+  "description": "Open standard for AI governance gates, checks, decisions, evidence, and audit events.",
+  "type": "object",
+  "required": ["spec_version", "pipeline"],
+  "properties": {
+    "spec_version": {
+      "type": "string",
+      "const": "0.1.0"
+    },
+    "pipeline": {
+      "type": "object",
+      "required": ["name", "gates"],
+      "properties": {
+        "name": { "type": "string" },
+        "description": { "type": "string" },
+        "gates": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/gate"
+          }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "gate": {
+      "type": "object",
+      "required": ["id", "name", "checks"],
+      "properties": {
+        "id": { "type": "string", "description": "Unique gate identifier" },
+        "name": { "type": "string" },
+        "description": { "type": "string" },
+        "stage": {
+          "type": "string",
+          "enum": ["pre-development", "data", "model", "deployment", "post-production", "flourishing"]
+        },
+        "checks": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/check" }
+        }
+      }
+    },
+    "check": {
+      "type": "object",
+      "required": ["id", "description", "type"],
+      "properties": {
+        "id": { "type": "string" },
+        "description": { "type": "string" },
+        "type": {
+          "type": "string",
+          "enum": ["automated", "manual", "hybrid"],
+          "description": "automated=agent-runnable, manual=human-only, hybrid=agent-draft+human-ratify"
+        },
+        "required": { "type": "boolean", "default": true },
+        "evidence_required": { "type": "boolean", "default": true },
+        "failure_action": {
+          "type": "string",
+          "enum": ["block", "mitigate", "warn"],
+          "description": "block=DISALLOWED, mitigate=NO requires remediation, warn=advisory"
+        },
+        "regulatory_refs": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Framework references (e.g., NIST:GOVERN-1.1, ISO:6.1.2, EU:Art9)"
+        }
+      }
+    },
+    "audit_event": {
+      "type": "object",
+      "required": ["event_id", "timestamp", "gate_id", "check_id", "result"],
+      "properties": {
+        "event_id": { "type": "string", "format": "uuid" },
+        "timestamp": { "type": "string", "format": "date-time" },
+        "gate_id": { "type": "string" },
+        "check_id": { "type": "string" },
+        "result": {
+          "type": "string",
+          "enum": ["pass", "fail-mitigate", "fail-block", "warn", "skipped"]
+        },
+        "evidence": { "type": "string", "description": "Link or summary of evidence" },
+        "decided_by": { "type": "string", "description": "Human name or agent ID" },
+        "gdr_ref": { "type": "string", "description": "GDR ID if normative" },
+        "notes": { "type": "string" }
+      }
+    }
+  }
+}
