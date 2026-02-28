@@ -1,0 +1,168 @@
+# AI Production Readiness Checklist v0.1
+# AiGovOps Foundation - AiDevOps Specification
+# Based on NIST AI RMF, ISO 42001, EU AI Act
+# License: Apache 2.0
+
+spec_version: "0.1.0"
+pipeline:
+  name: ai-production-readiness
+  description: General-purpose AI production readiness checklist
+
+  gates:
+    - id: gate.pre-development
+      name: Pre-Development Gate
+      stage: pre-development
+      checks:
+        - id: pd.use-case-registration
+          description: Use case formally registered with business owner and risk classification
+          type: manual
+          required: true
+          failure_action: block
+          regulatory_refs: ["NIST:GOVERN-1.1", "ISO:5.2", "EU:Art6"]
+        - id: pd.stakeholder-impact
+          description: Stakeholder impact assessment completed identifying affected populations
+          type: hybrid
+          required: true
+          failure_action: mitigate
+          regulatory_refs: ["NIST:MAP-1.1", "ISO:6.1.2", "EU:Art9"]
+        - id: pd.risk-classification
+          description: AI system risk level classified (minimal/limited/high/unacceptable)
+          type: manual
+          required: true
+          failure_action: block
+          regulatory_refs: ["NIST:MAP-2.1", "EU:Art6", "EU:Art7"]
+
+    - id: gate.data
+      name: Data Gate
+      stage: data
+      checks:
+        - id: data.provenance
+          description: Data provenance documented with source, lineage, and licensing
+          type: hybrid
+          required: true
+          failure_action: block
+          regulatory_refs: ["NIST:MAP-3.1", "ISO:A.7.4", "EU:Art10"]
+        - id: data.consent
+          description: Data consent and usage rights verified for all training data
+          type: manual
+          required: true
+          failure_action: block
+          regulatory_refs: ["ISO:A.7.3", "EU:Art10"]
+        - id: data.bias-assessment
+          description: Bias assessment conducted across protected characteristics
+          type: hybrid
+          required: true
+          failure_action: mitigate
+          regulatory_refs: ["NIST:MEASURE-2.6", "ISO:A.8.4", "EU:Art10"]
+        - id: data.pii-detection
+          description: PII detection and handling procedures documented
+          type: automated
+          required: true
+          failure_action: block
+          regulatory_refs: ["ISO:A.7.5", "EU:Art10"]
+
+    - id: gate.model
+      name: Model Gate
+      stage: model
+      checks:
+        - id: model.fairness-metrics
+          description: Fairness metrics evaluated across demographic groups
+          type: hybrid
+          required: true
+          failure_action: mitigate
+          regulatory_refs: ["NIST:MEASURE-2.6", "NIST:MEASURE-2.11", "EU:Art10"]
+        - id: model.explainability
+          description: Model explainability approach documented and tested
+          type: hybrid
+          required: true
+          failure_action: mitigate
+          regulatory_refs: ["NIST:MEASURE-2.8", "ISO:A.8.3", "EU:Art13"]
+        - id: model.security-testing
+          description: Adversarial testing and security assessment completed
+          type: automated
+          required: true
+          failure_action: block
+          regulatory_refs: ["NIST:MEASURE-2.7", "ISO:A.6.2.6", "EU:Art15"]
+        - id: model.performance-baselines
+          description: Performance baselines established with acceptance criteria
+          type: automated
+          required: true
+          failure_action: block
+          regulatory_refs: ["NIST:MEASURE-1.1", "ISO:A.8.2"]
+
+    - id: gate.deployment
+      name: Deployment Gate
+      stage: deployment
+      checks:
+        - id: deploy.environment-compliance
+          description: Deployment environment meets security and compliance requirements
+          type: automated
+          required: true
+          failure_action: block
+          regulatory_refs: ["ISO:A.6.2.4", "EU:Art15"]
+        - id: deploy.monitoring-config
+          description: Production monitoring configured for drift, performance, and fairness
+          type: automated
+          required: true
+          failure_action: block
+          regulatory_refs: ["NIST:MANAGE-3.1", "ISO:A.9.3", "EU:Art9"]
+        - id: deploy.rollback-procedure
+          description: Rollback and incident response procedures documented and tested
+          type: manual
+          required: true
+          failure_action: block
+          regulatory_refs: ["NIST:MANAGE-4.1", "ISO:A.6.2.5"]
+        - id: deploy.human-oversight
+          description: Human oversight mechanisms defined for high-risk systems
+          type: manual
+          required: true
+          failure_action: block
+          regulatory_refs: ["NIST:MANAGE-2.1", "EU:Art14"]
+
+    - id: gate.post-production
+      name: Post-Production Gate
+      stage: post-production
+      checks:
+        - id: post.continuous-monitoring
+          description: Continuous monitoring active and alerting configured
+          type: automated
+          required: true
+          failure_action: block
+          regulatory_refs: ["NIST:MANAGE-3.2", "ISO:A.9.4", "EU:Art9"]
+        - id: post.incident-response
+          description: Incident response plan tested and team trained
+          type: manual
+          required: true
+          failure_action: mitigate
+          regulatory_refs: ["NIST:MANAGE-4.2", "ISO:A.6.2.5"]
+        - id: post.periodic-reassessment
+          description: Periodic reassessment schedule established (quarterly minimum)
+          type: manual
+          required: true
+          failure_action: mitigate
+          regulatory_refs: ["NIST:GOVERN-1.5", "ISO:9.3"]
+
+    - id: gate.flourishing
+      name: Human Flourishing Gate
+      stage: flourishing
+      checks:
+        - id: flourish.dignity
+          description: Assessment of how this AI system affects human dignity and autonomy
+          type: manual
+          required: true
+          evidence_required: true
+          failure_action: mitigate
+          regulatory_refs: ["NIST:GOVERN-1.2"]
+        - id: flourish.equity
+          description: Assessment of how this AI system affects fairness and inclusion
+          type: manual
+          required: true
+          evidence_required: true
+          failure_action: mitigate
+          regulatory_refs: ["NIST:MAP-1.5", "EU:Art9"]
+        - id: flourish.delight
+          description: Assessment of how this AI system enables joy, creativity, or positive experience
+          type: manual
+          required: false
+          evidence_required: false
+          failure_action: warn
