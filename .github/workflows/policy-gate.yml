@@ -62,35 +62,9 @@ jobs:
       - name: Run production readiness gate
         run: |
           echo "=== Running Production Readiness Policy Gate ==="
-          # Build test input from checklist
-          cat > /tmp/test_input.json << 'EOF'
-          {
-            "checklist": {
-              "metadata": {
-                "version": "0.1",
-                "framework": "AiGovOps Foundation OS"
-              },
-              "gates": {
-                "model": {
-                  "fairness_audit_complete": false,
-                  "explainability_report_filed": false
-                },
-                "deployment": {
-                  "human_oversight_assigned": false,
-                  "rollback_plan_documented": false
-                },
-                "human_flourishing": {
-                  "dignity_assessment_complete": false,
-                  "equity_review_filed": false,
-                  "delight_score_above_threshold": false
-                }
-              }
-            }
-          }
-          EOF
-          # Evaluate - this will show what's failing (expected for empty repo)
+          echo '{"checklist":{"metadata":{"version":"0.1","framework":"AiGovOps Foundation OS"},"gates":{"model":{"fairness_audit_complete":false,"explainability_report_filed":false},"deployment":{"human_oversight_assigned":false,"rollback_plan_documented":false},"human_flourishing":{"dignity_assessment_complete":false,"equity_review_filed":false,"delight_score_above_threshold":false}}}}' > /tmp/test_input.json
           opa eval --data rego/production_readiness.rego --input /tmp/test_input.json "data.aigovops.production_readiness" --format pretty || true
-          echo "Policy gate evaluation complete. Review results above."
+          echo "Policy gate evaluation complete."
 
   decision-card-lint:
     name: Decision Card Schema Lint
@@ -106,19 +80,13 @@ jobs:
         run: |
           echo "=== Validating Decision Cards ==="
           SCHEMA="decision-cards/schema.json"
-          CARDS=$(find decision-cards -name '*.json' ! -name 'schema.json' 2>/dev/null)
+          CARDS=$(find decision-cards -name '*.json' ! -name 'schema.json' 2>/dev/null || true)
           if [ -z "$CARDS" ]; then
-            echo "No decision cards found yet. Schema lint passed (no cards to validate)."
+            echo "No decision cards found yet. Schema lint passed."
           else
             for card in $CARDS; do
               echo "Validating $card against schema"
-              python3 -c "
-import json, jsonschema
-schema = json.load(open('$SCHEMA'))
-card = json.load(open('$card'))
-jsonschema.validate(card, schema)
-print('PASS: $card')
-" || exit 1
+              python3 -c "import json, jsonschema; s=json.load(open('$SCHEMA')); c=json.load(open('$card')); jsonschema.validate(c, s); print('PASS: $card')" || exit 1
             done
           fi
           echo "Decision card lint complete."
@@ -135,10 +103,10 @@ print('PASS: $card')
         run: |
           echo "=== AiGovOps Policy Gate Audit Trail ==="
           echo "Timestamp: $(date -u +%Y-%m-%dT%H:%M:%SZ)"
-          echo "Triggered by: ${{ github.event_name }}"
-          echo "Actor: ${{ github.actor }}"
-          echo "Commit: ${{ github.sha }}"
-          echo "Ref: ${{ github.ref }}"
+          echo "Triggered by: $GITHUB_EVENT_NAME"
+          echo "Actor: $GITHUB_ACTOR"
+          echo "Commit: $GITHUB_SHA"
+          echo "Ref: $GITHUB_REF"
           echo ""
           echo "--- Files Changed ---"
           git log --oneline -1 --name-only
