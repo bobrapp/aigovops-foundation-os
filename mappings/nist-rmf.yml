@@ -1,0 +1,64 @@
+# NIST AI Risk Management Framework Mapping
+# Maps AiDevOps checklist items to NIST AI RMF subcategories
+# Reference: https://airc.nist.gov/AI_RMF_Interactivity
+
+framework: NIST AI RMF 1.0
+mappings:
+  # GOVERN function
+  - nist_ref: GOVERN-1.1
+    description: Legal and regulatory requirements are identified
+    aidevops_checks: [pd.use-case-registration]
+  - nist_ref: GOVERN-1.2
+    description: Trustworthy AI characteristics are integrated into org policies
+    aidevops_checks: [flourish.dignity]
+  - nist_ref: GOVERN-1.5
+    description: Ongoing monitoring and periodic review of AI risk management
+    aidevops_checks: [post.periodic-reassessment]
+
+  # MAP function
+  - nist_ref: MAP-1.1
+    description: Intended purpose and context of use are documented
+    aidevops_checks: [pd.stakeholder-impact]
+  - nist_ref: MAP-1.5
+    description: Organizational risk tolerance is determined
+    aidevops_checks: [flourish.equity]
+  - nist_ref: MAP-2.1
+    description: Scientific integrity and data collection standards
+    aidevops_checks: [pd.risk-classification]
+  - nist_ref: MAP-3.1
+    description: Potential benefits and costs are assessed
+    aidevops_checks: [data.provenance]
+
+  # MEASURE function
+  - nist_ref: MEASURE-1.1
+    description: Approaches and metrics for measurement are appropriate
+    aidevops_checks: [model.performance-baselines]
+  - nist_ref: MEASURE-2.6
+    description: Bias testing conducted and results are documented
+    aidevops_checks: [data.bias-assessment, model.fairness-metrics]
+  - nist_ref: MEASURE-2.7
+    description: AI system security and resilience evaluated
+    aidevops_checks: [model.security-testing]
+  - nist_ref: MEASURE-2.8
+    description: Explainability and interpretability assessed
+    aidevops_checks: [model.explainability]
+  - nist_ref: MEASURE-2.11
+    description: Fairness assessed at individual and group levels
+    aidevops_checks: [model.fairness-metrics]
+
+  # MANAGE function
+  - nist_ref: MANAGE-2.1
+    description: Human oversight mechanisms are in place
+    aidevops_checks: [deploy.human-oversight]
+  - nist_ref: MANAGE-3.1
+    description: AI risks and benefits from third-party resources monitored
+    aidevops_checks: [deploy.monitoring-config]
+  - nist_ref: MANAGE-3.2
+    description: Pre-defined responses to identified risks are in place
+    aidevops_checks: [post.continuous-monitoring]
+  - nist_ref: MANAGE-4.1
+    description: Post-deployment AI system monitoring plan is implemented
+    aidevops_checks: [deploy.rollback-procedure]
+  - nist_ref: MANAGE-4.2
+    description: Mechanisms to capture feedback on AI system performance
+    aidevops_checks: [post.incident-response]
