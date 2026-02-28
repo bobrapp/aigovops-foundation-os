@@ -7,6 +7,7 @@ package aigovops.production_readiness
 
 import future.keywords.in
 import future.keywords.every
+import future.keywords.if
 
 # Default deny deployment
 default allow := false
